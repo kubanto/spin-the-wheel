@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spin-the-wheel
+  namespace: spin-the-wheel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spin-the-wheel
+  template:
+    metadata:
+      labels:
+        app: spin-the-wheel
+    spec:
+      containers:
+      - name: game
+        image: spin-the-wheel:1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: db
+          mountPath: /data
+      volumes:
+      - name: db
+        persistentVolumeClaim:
+          claimName: game-db-pvc

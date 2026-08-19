@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🎡 Spin the Wheel</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn46hPC90ZXh0Pjwvc3ZnPg==">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, #1e1b4b 0%, #312e81 45%, #4c1d95 100%);
+    color: #f5f3ff;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 64px;
+    overflow-x: hidden;
+  }
+  .app {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    text-align: center;
+  }
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+  #mute-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    backdrop-filter: blur(6px);
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.2);
+    color: #fff;
+    font-size: 1rem;
+  }
+  button {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .1s ease, opacity .2s ease;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    width: 100%;
+    margin-top: 12px;
+  }
+  .btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    width: 100%;
+    margin-top: 12px;
+  }
+  .wheel-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+  }
+  .pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 26px solid #fbbf24;
+    z-index: 5;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+  }
+  #wheel {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    border: 6px solid #fbbf24;
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.5);
+    transition: transform 4s cubic-bezier(0.17, 0.89, 0.32, 1.15);
+  }
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 44px; height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    background: #fbbf24;
+    border: 3px solid #1e1b4b;
+    z-index: 4;
+  }
+  .status {
+    display: flex;
+    justify-content: space-between;
+    width: 280px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+  .result-banner {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    min-height: 1.4em;
+  }
+  .spin-history {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    min-height: 30px;
+  }
+  .spin-chip {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  th { opacity: 0.7; font-weight: 600; }
+  tr:nth-child(1) td { color: #fbbf24; font-weight: 700; }
+  .hidden { display: none; }
+  .confetti-piece {
+    position: fixed;
+    top: -10px;
+    width: 8px;
+    height: 14px;
+    z-index: 999;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-row">
+    <h1>🎡 Spin the Wheel</h1>
+    <button id="mute-btn" title="Toggle sound">🔊</button>
+  </div>
+
+  <div class="card" id="setup-card">
+    <label for="player-name">Player name</label>
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="30">
+    <button class="btn-primary" id="start-btn">Start Game</button>
+  </div>
+
+  <div class="card hidden" id="game-card">
+    <div class="status">
+      <span id="player-label"></span>
+      <span id="spin-counter">Spin 0/3</span>
+    </div>
+
+    <div class="wheel-wrap" style="margin: 16px auto;">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="280" height="280"></canvas>
+      <div class="hub"></div>
+    </div>
+
+    <div class="result-banner" id="result-banner">&nbsp;</div>
+    <div class="spin-history" id="spin-history"></div>
+    <div class="status">
+      <span>Total score</span>
+      <strong id="total-score">0</strong>
+    </div>
+
+    <button class="btn-primary" id="spin-btn">Spin the wheel</button>
+    <button class="btn-success hidden" id="play-again-btn">Play again</button>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">🏆 Leaderboard</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Player</th><th>Score</th><th>When</th></tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SEGMENTS = [
+  { value: 10,  color: "#ef4444" },
+  { value: 50,  color: "#f59e0b" },
+  { value: 5,   color: "#eab308" },
+  { value: 100, color: "#22c55e" },
+  { value: 15,  color: "#06b6d4" },
+  { value: 25,  color: "#3b82f6" },
+  { value: 5,   color: "#8b5cf6" },
+  { value: 75,  color: "#ec4899" },
+];
+const SEGMENT_ANGLE = 360 / SEGMENTS.length;
+const MAX_SPINS = 3;
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const radius = canvas.width / 2;
+
+let currentRotation = 0;
+let spinsLeft = MAX_SPINS;
+let totalScore = 0;
+let spinHistory = [];
+let playerName = "";
+let spinning = false;
+let soundEnabled = true;
+
+/* ---------- Sound (Web Audio API, no external files) ---------- */
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTick() {
+  if (!soundEnabled) return;
+  const ctx2 = getAudioCtx();
+  const osc = ctx2.createOscillator();
+  const gain = ctx2.createGain();
+  osc.type = "square";
+  osc.frequency.value = 700 + Math.random() * 80;
+  gain.gain.setValueAtTime(0.15, ctx2.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.06);
+  osc.connect(gain).connect(ctx2.destination);
+  osc.start();
+  osc.stop(ctx2.currentTime + 0.06);
+}
+function playWinSound() {
+  if (!soundEnabled) return;
+  const ctx2 = getAudioCtx();
+  const notes = [523.25, 659.25, 783.99, 1046.5];
+  notes.forEach((freq, i) => {
+    const osc = ctx2.createOscillator();
+    const gain = ctx2.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const start = ctx2.currentTime + i * 0.12;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.2, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.3);
+    osc.connect(gain).connect(ctx2.destination);
+    osc.start(start);
+    osc.stop(start + 0.35);
+  });
+}
+document.getElementById("mute-btn").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  document.getElementById("mute-btn").textContent = soundEnabled ? "🔊" : "🔇";
+});
+
+/* Scheduled ticks that slow down, matching the wheel's ease-out deceleration */
+function scheduleTicks() {
+  const delays = [90,100,110,120,140,160,180,210,240,280,320,370,430,500,580,670];
+  let elapsed = 0;
+  delays.forEach(d => {
+    elapsed += d;
+    setTimeout(playTick, elapsed);
+  });
+}
+
+/* ---------- Wheel drawing ---------- */
+function drawWheel(highlightIndex) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  SEGMENTS.forEach((seg, i) => {
+    const startAngle = (i * SEGMENT_ANGLE) * Math.PI / 180;
+    const endAngle = ((i + 1) * SEGMENT_ANGLE) * Math.PI / 180;
+
+    ctx.beginPath();
+    ctx.moveTo(radius, radius);
+    ctx.arc(radius, radius, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+
+    if (highlightIndex === i) {
+      ctx.save();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 18;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(radius, radius);
+    ctx.rotate(startAngle + (endAngle - startAngle) / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 18px sans-serif";
+    ctx.shadowColor = "rgba(0,0,0,0.5)";
+    ctx.shadowBlur = 3;
+    ctx.fillText(seg.value, radius - 14, 6);
+    ctx.restore();
+  });
+}
+drawWheel();
+
+/* ---------- Confetti ---------- */
+function launchConfetti() {
+  const colors = ["#ef4444","#f59e0b","#22c55e","#3b82f6","#ec4899","#8b5cf6"];
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (2 + Math.random() * 1.5) + "s";
+    piece.style.opacity = 0.9;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 4000);
+  }
+}
+
+/* ---------- Game flow ---------- */
+document.getElementById("start-btn").addEventListener("click", () => {
+  const name = document.getElementById("player-name").value.trim();
+  if (!name) { alert("Please enter a player name"); return; }
+  getAudioCtx();
+  playerName = name;
+  spinsLeft = MAX_SPINS;
+  totalScore = 0;
+  spinHistory = [];
+  currentRotation = 0;
+  canvas.style.transition = "none";
+  canvas.style.transform = "rotate(0deg)";
+  drawWheel();
+  document.getElementById("player-label").textContent = "👤 " + playerName;
+  document.getElementById("spin-counter").textContent = `Spin 0/${MAX_SPINS}`;
+  document.getElementById("total-score").textContent = "0";
+  document.getElementById("result-banner").innerHTML = "&nbsp;";
+  document.getElementById("spin-history").innerHTML = "";
+  document.getElementById("setup-card").classList.add("hidden");
+  document.getElementById("game-card").classList.remove("hidden");
+  document.getElementById("spin-btn").classList.remove("hidden");
+  document.getElementById("spin-btn").disabled = false;
+  document.getElementById("play-again-btn").classList.add("hidden");
+  requestAnimationFrame(() => { canvas.style.transition = "transform 4s cubic-bezier(0.17, 0.89, 0.32, 1.15)"; });
+});
+
+document.getElementById("spin-btn").addEventListener("click", () => {
+  if (spinning || spinsLeft <= 0) return;
+  spinning = true;
+  document.getElementById("spin-btn").disabled = true;
+  document.getElementById("result-banner").textContent = "Spinning...";
+  scheduleTicks();
+
+  const segmentIndex = Math.floor(Math.random() * SEGMENTS.length);
+  const targetWithinCircle = 360 - (segmentIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2);
+  const extraSpins = 5 * 360;
+  const baseRotation = currentRotation - (currentRotation % 360);
+  let newRotation = baseRotation + extraSpins + targetWithinCircle;
+  if (newRotation <= currentRotation) newRotation += 360;
+
+  currentRotation = newRotation;
+  canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+  setTimeout(() => {
+    const value = SEGMENTS[segmentIndex].value;
+    totalScore += value;
+    spinHistory.push(value);
+    spinsLeft -= 1;
+
+    drawWheel(segmentIndex);
+    setTimeout(() => drawWheel(), 700);
+
+    document.getElementById("total-score").textContent = totalScore;
+    document.getElementById("spin-counter").textContent = `Spin ${MAX_SPINS - spinsLeft}/${MAX_SPINS}`;
+    document.getElementById("result-banner").textContent = `+${value} points!`;
+    document.getElementById("spin-history").innerHTML =
+      spinHistory.map(v => `<span class="spin-chip">${v}</span>`).join("");
+    spinning = false;
+
+    if (spinsLeft <= 0) {
+      document.getElementById("spin-btn").classList.add("hidden");
+      finishGame();
+    } else {
+      document.getElementById("spin-btn").disabled = false;
+    }
+  }, 4100);
+});
+
+function finishGame() {
+  document.getElementById("result-banner").textContent = `🎉 Game over! Final score: ${totalScore}`;
+  playWinSound();
+  launchConfetti();
+  fetch("/score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ player: playerName, total: totalScore })
+  })
+  .then(r => r.json())
+  .then(() => loadLeaderboard())
+  .catch(err => console.error("Error saving score:", err))
+  .finally(() => {
+    document.getElementById("play-again-btn").classList.remove("hidden");
+  });
+}
+
+document.getElementById("play-again-btn").addEventListener("click", () => {
+  document.getElementById("game-card").classList.add("hidden");
+  document.getElementById("setup-card").classList.remove("hidden");
+  document.getElementById("player-name").value = "";
+});
+
+function loadLeaderboard() {
+  fetch("/scores")
+    .then(r => r.json())
+    .then(rows => {
+      const body = document.getElementById("leaderboard-body");
+      if (!rows.length) {
+        body.innerHTML = "<tr><td colspan=\"4\">No scores yet</td></tr>";
+        return;
+      }
+      body.innerHTML = rows.map((row, i) =>
+        `<tr><td>${MEDALS[i] || (i + 1)}</td><td>${escapeHtml(row[0])}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`
+      ).join("");
+    })
+    .catch(() => {
+      document.getElementById("leaderboard-body").innerHTML = "<tr><td colspan=\"4\">Error loading leaderboard</td></tr>";
+    });
+}
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+loadLeaderboard();
+</script>
+</body>
+</html>
