@@ -1,42 +1,41 @@
 
 # 🎡 Spin the Wheel – Kubernetes Stateful Demo
 
-Spin the Wheel è una **semplice applicazione stateful** pensata per demo Kubernetes e **Veeam Kasten**.
+Spin the Wheel is a **simple stateful application** designed for Kubernetes backup & restore demos (works with any Kubernetes-native backup tool, e.g. Velero or similar).
 
-L’obiettivo è mostrare in modo *visivo* come:
-- un’applicazione Kubernetes
-- con **storage persistente (PVC / Longhorn)**
-- possa essere **backuppata, cancellata e ripristinata**
-- mantenendo **dati e comportamento invariati**.
-
----
-
-## ✨ Funzionalità dell’app
-
-- Gioco "Spin the Wheel" con ruota grafica animata (canvas)
-- Inserimento nome giocatore
-- 3 spin per partita, con storico dei singoli risultati mostrato a schermo
-- Punteggio finale = somma dei 3 spin
-- Effetti sonori generati via Web Audio API (nessun file audio esterno), con pulsante mute
-- Confetti animati a fine partita
-- Salvataggio persistente del risultato (SQLite su PVC)
-- Leaderboard ordinata per punteggio, con medaglie 🥇🥈🥉 per i primi tre
-- Interfaccia in inglese
+The goal is to show, *visually*, how:
+- a Kubernetes application
+- with **persistent storage (PVC / Longhorn)**
+- can be **backed up, deleted, and restored**
+- while keeping **data and behavior unchanged**.
 
 ---
 
-## 🧱 Architettura
+## ✨ App features
+
+- "Spin the Wheel" game with an animated graphical wheel (canvas)
+- Player name entry
+- 3 spins per game, with individual results shown on screen
+- Final score = sum of the 3 spins
+- Sound effects generated via the Web Audio API (no external audio files), with a mute button
+- Confetti animation on game over
+- Persistent score storage (SQLite on a PVC)
+- Leaderboard sorted by score, with 🥇🥈🥉 medals for the top three
+
+---
+
+## 🧱 Architecture
 
 - **Backend**: Python + Flask
-- **Frontend**: HTML/CSS/JS vanilla, nessuna dipendenza esterna (self-contained)
+- **Frontend**: vanilla HTML/CSS/JS, no external dependencies (fully self-contained)
 - **Database**: SQLite
 - **Storage**: PVC (Longhorn)
 - **Container runtime**: containerd
-- **Exposure**: Service NodePort (porta fissa)
+- **Exposure**: NodePort Service (fixed port)
 
 ---
 
-## 📂 Struttura del repository
+## 📂 Repository structure
 
 ```
 spin-the-wheel/
@@ -57,11 +56,11 @@ spin-the-wheel/
 
 ---
 
-## 🚀 Build dell’immagine
+## 🚀 Building the image
 
-L'immagine va costruita direttamente sul nodo dove girerà il pod (il Deployment usa `imagePullPolicy: Never`, quindi non tira da nessun registry) e va importata nel namespace containerd `k8s.io`, quello che il kubelet consulta via CRI.
+The image must be built directly on the node where the pod will run (the Deployment uses `imagePullPolicy: Never`, so it never pulls from a registry) and imported into containerd's `k8s.io` namespace, the one kubelet queries via CRI.
 
-**Su k3s:**
+**On k3s:**
 ```bash
 export CONTAINERD_ADDRESS=/run/k3s/containerd/containerd.sock
 export CONTAINERD_NAMESPACE=k8s.io
@@ -69,9 +68,9 @@ export CONTAINERD_NAMESPACE=k8s.io
 sudo nerdctl build -t spin-the-wheel:1.0 .
 ```
 
-**Su un cluster kubeadm "vanilla" con containerd standard** (socket in `/run/containerd/containerd.sock`, non serve installare Docker):
+**On a "vanilla" kubeadm cluster with standard containerd** (socket at `/run/containerd/containerd.sock`, no need to install Docker):
 ```bash
-# nerdctl + buildkit, se non già presenti
+# nerdctl + buildkit, if not already present
 curl -sSL https://github.com/containerd/nerdctl/releases/download/v2.0.5/nerdctl-full-2.0.5-linux-<arch>.tar.gz -o nerdctl-full.tar.gz
 sudo tar Cxzvf /usr/local nerdctl-full.tar.gz
 sudo systemctl enable --now buildkit
@@ -79,16 +78,16 @@ sudo systemctl enable --now buildkit
 sudo nerdctl --namespace k8s.io build -t spin-the-wheel:1.0 .
 sudo nerdctl --namespace k8s.io images | grep spin-the-wheel
 ```
-(sostituisci `<arch>` con `amd64` o `arm64` a seconda del nodo)
+(replace `<arch>` with `amd64` or `arm64` depending on the node)
 
-Per aggiornare l'app dopo una modifica: ribuilda con lo stesso tag, poi
+To update the app after a change: rebuild with the same tag, then
 ```bash
 kubectl rollout restart deployment/spin-the-wheel -n spin-the-wheel
 ```
 
 ---
 
-## ☸️ Deploy su Kubernetes
+## ☸️ Deploying to Kubernetes
 
 ```bash
 kubectl apply -f k8s/00-namespace.yaml
@@ -99,7 +98,7 @@ kubectl apply -f k8s/30-service.yaml
 
 ---
 
-## 🌍 Accesso all’app
+## 🌍 Accessing the app
 
 ```text
 http://<NODE-IP>:31080
@@ -107,36 +106,36 @@ http://<NODE-IP>:31080
 
 ---
 
-## 💾 Demo Backup & Restore con Veeam Kasten
+## 💾 Backup & Restore demo
 
-1. Creare una policy Kasten sul namespace `spin-the-wheel`
-2. Eseguire un backup
-3. Simulare un disastro:
+1. Create a backup policy for the `spin-the-wheel` namespace using your Kubernetes backup tool of choice
+2. Run a backup
+3. Simulate a disaster:
    ```bash
    kubectl delete ns spin-the-wheel
    ```
-4. Eseguire il restore dal backup
-5. Verificare che la leaderboard sia invariata
+4. Restore from the backup
+5. Verify that the leaderboard is unchanged
 
 ---
 
-## 🎯 Perché è una demo efficace
+## 🎯 Why this makes a good demo
 
-- Stato applicativo **visibile**
-- Storage persistente reale
-- Restore immediatamente verificabile
-- Nessuna dipendenza esterna
+- **Visible** application state
+- Real persistent storage
+- Immediately verifiable restore
+- No external dependencies
 
 ---
 
 ## ⚠️ Disclaimer
 
-Questo progetto è stato pensato come una semplice applicazione per fare pratica e test di backup e restore in ambienti Kubernetes — non è destinato a un uso in produzione.
+This project was created as a simple application for practicing and testing backup and restore workflows in Kubernetes environments — it is not intended for production use.
 
-Il software è fornito "così com'è", senza alcuna garanzia esplicita o implicita. L'uso è a totale responsabilità di chi lo utilizza: l'autore non si assume alcuna responsabilità per eventuali danni, perdita di dati o malfunzionamenti derivanti dall'uso di questo progetto.
+The software is provided "as is", without any express or implied warranty. Use is entirely at the user's own risk: the author assumes no liability for any damages, data loss, or malfunctions arising from the use of this project.
 
 ---
 
-## 📜 Licenza
+## 📜 License
 
 MIT
